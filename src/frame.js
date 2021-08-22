@@ -1,4 +1,6 @@
-const { Buffer } = require('buffer')
+import { Buffer } from 'buffer'
+import { OPCODE } from'./frame-constance.js'
+
 
 const parser = (buf) => {
     let counter = 0;
@@ -24,15 +26,17 @@ const parser = (buf) => {
         mask_key = buf.slice(counter, counter + 4)
         counter += 4;
     }
-    const payload = buf.slice(counter, counter + payloadLen)
+    let payload = buf.slice(counter, counter + payloadLen)
     for(let i = 0; i < payloadLen; i++) {
         payload[i] ^=  mask_key[i % 4]
     }
-    return { payload: payload.toString('utf8'), Opcode: opcode }
+
+    if (opcode === OPCODE.TEXT) payload = payload.toString('utf8')
+
+    return { payload, opcode }
 }
 
 const encodeMsg = (msg, Opcode) => {
-    // Opcode 0: 连续帧 1: 文本类型 2: 二进制类型 8: 关闭帧 9:ping 10: pong
     const frame = {
         FIN: 1,
         Opcode: Opcode || 1, // text
@@ -65,7 +69,7 @@ const encodeMsg = (msg, Opcode) => {
     return Buffer.concat([preBytes, payload])
 }
 
-module.exports = {
+export {
     parser,
     encodeMsg
 }

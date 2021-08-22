@@ -1,6 +1,7 @@
-const EventEmitter = require("events");
-const crypto = require("crypto");
-const { parser, encodeMsg } = require('./frame')
+import EventEmitter from "events"
+import crypto from "crypto"
+import { OPCODE } from './frame-constance.js'
+import { parser, encodeMsg } from './frame.js'
 
 const KEY_SUFFIX = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 const hashWebSocketKey = (key) => {
@@ -11,7 +12,7 @@ const hashWebSocketKey = (key) => {
 
 class WebSocket extends EventEmitter {
   socket
-  constructor(req, socket, upgradeHeader) {
+  constructor(req, socket) {
     super();
 
     this.socket = socket;
@@ -22,15 +23,20 @@ class WebSocket extends EventEmitter {
     // 监听data,close事件
     socket.on("data", (data) => {
         data = parser(data)
-        if (data.Opcode === 8) {
+
+        const opcode = data.opcode
+        if (opcode === OPCODE.CLOSE) { // 返回close握手信息并销毁socket
           this.send('close', 8)
           this.socket.destroy()
+          this.emit('close')
+          return
+        }
+        if (opcode === OPCODE.PING) { // ping--pong
+          this.send('pong', OPCODE.PONG)
+          return
         }
         this.emit('data', data)
         this.send('I received!')
-    });
-    socket.on("close", () => {
-        this.emit('close')
     });
   }
 
@@ -53,4 +59,4 @@ class WebSocket extends EventEmitter {
   }
 }
 
-module.exports = WebSocket;
+export default WebSocket
