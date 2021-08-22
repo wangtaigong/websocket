@@ -8,7 +8,7 @@ const parser = (buf) => {
 
     const mask = buf[counter] >> 7;
     let payloadLen = buf[counter] & 0x7f;
-    console.log(payloadLen);
+    console.log(opcode);
     counter++;
     if (payloadLen === 126) {
         payloadLen = buf.readUInt16BE(counter)
@@ -28,13 +28,14 @@ const parser = (buf) => {
     for(let i = 0; i < payloadLen; i++) {
         payload[i] ^=  mask_key[i % 4]
     }
-    return { payload: payload.toString('utf8') }
+    return { payload: payload.toString('utf8'), Opcode: opcode }
 }
 
-const encodeMsg = (msg) => {
+const encodeMsg = (msg, Opcode) => {
+    // Opcode 0: 连续帧 1: 文本类型 2: 二进制类型 8: 关闭帧 9:ping 10: pong
     const frame = {
         FIN: 1,
-        Opcode: 1, // text
+        Opcode: Opcode || 1, // text
         MASK: 0
     }
 

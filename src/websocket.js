@@ -22,6 +22,10 @@ class WebSocket extends EventEmitter {
     // 监听data,close事件
     socket.on("data", (data) => {
         data = parser(data)
+        if (data.Opcode === 8) {
+          this.send('close', 8)
+          this.socket.destroy()
+        }
         this.emit('data', data)
         this.send('I received!')
     });
@@ -42,8 +46,10 @@ class WebSocket extends EventEmitter {
     return resHeaders
   }
 
-  send(msg) {
-    this.socket.write(encodeMsg(msg))
+  send(msg, opcode) {
+    this.socket.write(encodeMsg(msg, opcode))
+    if (opcode === 8) {
+    }
   }
 }
 
